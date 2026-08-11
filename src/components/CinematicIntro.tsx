@@ -29,13 +29,13 @@ type Cam = {
 const BEATS: Beat[] = [
   {
     scene: "scratches",
-    src: "/videos/scratches.mp4?v=4",
-    duration: 4800,
-    startAt: 0.05,
+    src: "/videos/scratches.mp4?v=5",
+    duration: 5000,
+    startAt: 0.15,
     caption: "1 — Scratches",
     camera: {
-      from: { scale: 1.16, x: 0.02, y: -0.01, bright: 0.82, contrast: 1.2 },
-      to: { scale: 1.05, x: -0.015, y: 0.01, bright: 0.98, contrast: 1.08 },
+      from: { scale: 1.2, x: 0.03, y: -0.02, bright: 0.78, contrast: 1.25 },
+      to: { scale: 1.06, x: -0.02, y: 0.01, bright: 0.95, contrast: 1.12 },
     },
   },
   {
