@@ -30,9 +30,9 @@ const BEATS: Beat[] = [
   {
     scene: "scratches",
     src: "/videos/scratches.mp4?v=4",
-    duration: 5600,
+    duration: 4800,
     startAt: 0.05,
-    caption: "Surface Scratches",
+    caption: "1 — Scratches",
     camera: {
       from: { scale: 1.16, x: 0.02, y: -0.01, bright: 0.82, contrast: 1.2 },
       to: { scale: 1.05, x: -0.015, y: 0.01, bright: 0.98, contrast: 1.08 },
@@ -41,9 +41,9 @@ const BEATS: Beat[] = [
   {
     scene: "compound",
     src: "/videos/compound.mp4?v=3",
-    duration: 5200,
+    duration: 4800,
     startAt: 0.15,
-    caption: "Polishing Solution",
+    caption: "2 — Apply Compound",
     camera: {
       from: { scale: 1.18, x: -0.03, y: 0.02, bright: 0.78, contrast: 1.12 },
       to: { scale: 1.05, x: 0.02, y: -0.01, bright: 0.95, contrast: 1.05 },
@@ -52,9 +52,9 @@ const BEATS: Beat[] = [
   {
     scene: "polish",
     src: "/videos/polish.mp4?v=3",
-    duration: 6200,
+    duration: 5200,
     startAt: 0.2,
-    caption: "Correction",
+    caption: "3 — Polish",
     camera: {
       from: { scale: 1.2, x: 0.03, y: 0.02, bright: 0.75, contrast: 1.15 },
       to: { scale: 1.04, x: -0.01, y: -0.02, bright: 1, contrast: 1.05 },
@@ -366,54 +366,66 @@ export function CinematicIntro() {
     const type = typeRef.current;
     if (!type) return;
 
+    // Kill the footage so the logo reads clean on black
+    gsap.to(fade.current, { value: 0, duration: 0.55, ease: "power2.inOut" });
+    gsap.to(cam.current, {
+      bright: 0.1,
+      scale: 1.08,
+      duration: 0.55,
+      ease: "power2.inOut",
+    });
+    await wait(500, id);
+    if (finished.current || runId.current !== id) return;
+
+    videoARef.current?.pause();
+    videoBRef.current?.pause();
+
     gsap.set(type, { autoAlpha: 1 });
     gsap.set(".k-letter", {
       opacity: 0,
-      x: 70,
-      scaleX: 2.2,
-      filter: "blur(16px)",
+      y: 40,
+      scale: 1.15,
+      filter: "blur(18px)",
     });
+    gsap.set(".type-sub", { opacity: 0, y: 12 });
     gsap.set(".type-streak", { autoAlpha: 0, x: "-40%" });
-
-    // Dim footage behind type
-    gsap.to(cam.current, {
-      bright: 0.35,
-      scale: 1.12,
-      duration: 0.7,
-      ease: "power2.inOut",
-    });
-    gsap.to(fade.current, { value: 0.35, duration: 0.7, ease: "power2.inOut" });
 
     const tl = gsap.timeline();
     tl.to(
       ".type-streak",
-      { autoAlpha: 1, x: "5%", duration: 0.55, ease: "power3.out" },
+      { autoAlpha: 1, x: "8%", duration: 0.6, ease: "power3.out" },
       0
     );
     tl.to(
       ".k-letter",
       {
         opacity: 1,
-        x: 0,
-        scaleX: 1,
+        y: 0,
+        scale: 1,
         filter: "blur(0px)",
-        duration: 0.75,
-        stagger: 0.07,
+        duration: 0.85,
+        stagger: 0.08,
         ease: "power3.out",
       },
-      0.12
+      0.1
+    );
+    tl.to(
+      ".type-sub",
+      { opacity: 1, y: 0, duration: 0.7, ease: "power2.out" },
+      0.55
     );
     tl.to(
       ".type-streak",
-      { x: "55%", autoAlpha: 0.25, duration: 0.8, ease: "power2.inOut" },
-      0.55
+      { x: "60%", autoAlpha: 0.2, duration: 0.9, ease: "power2.inOut" },
+      0.5
     );
-    tl.to(".k-letter", { opacity: 0.92, duration: 0.4 }, 1.1);
 
-    await wait(2200, id);
+    // Hold the logo on screen
+    await wait(3200, id);
     if (finished.current || runId.current !== id) return;
 
-    gsap.to(type, { autoAlpha: 0, duration: 0.45, ease: "power2.in" });
+    gsap.to(type, { autoAlpha: 0, duration: 0.55, ease: "power2.in" });
+    await wait(400, id);
   }
 
   function goToSite() {
@@ -436,44 +448,34 @@ export function CinematicIntro() {
       },
     });
 
-    // 1) Fade the cinematic layer away
+    // Fade intro → site
     tl.to(
       [btnRef.current, brandRef.current, captionRef.current, typeRef.current],
-      { autoAlpha: 0, duration: 0.55, ease: "power2.out" },
+      { autoAlpha: 0, duration: 0.5, ease: "power2.out" },
       0
     );
-    tl.to(
-      fade.current,
-      { value: 0, duration: 1.05, ease: "power2.inOut" },
-      0
-    );
-    tl.to(
-      cam.current,
-      { bright: 0.12, scale: 1.12, duration: 1.05, ease: "power2.inOut" },
-      0
-    );
-    tl.to(grainRef.current, { autoAlpha: 0, duration: 0.6, ease: "power1.out" }, 0);
-    tl.to(introRef.current, { autoAlpha: 0, duration: 0.7, ease: "power2.inOut" }, 0.35);
+    tl.to(fade.current, { value: 0, duration: 0.85, ease: "power2.inOut" }, 0);
+    tl.to(grainRef.current, { autoAlpha: 0, duration: 0.5 }, 0);
+    tl.to(introRef.current, { autoAlpha: 0, duration: 0.65, ease: "power2.inOut" }, 0.25);
 
-    // 2) Then gently reveal the site (no hard wipe cut)
     if (wipe) {
       gsap.set(wipe, { clipPath: "inset(0 0 0 0%)", autoAlpha: 0 });
-      tl.to(wipe, { autoAlpha: 1, duration: 1.05, ease: "power2.out" }, 0.55);
+      tl.to(wipe, { autoAlpha: 1, duration: 1, ease: "power2.out" }, 0.4);
     }
     tl.from(
       ".site-nav",
       { y: -16, autoAlpha: 0, duration: 0.7, ease: "power2.out" },
-      0.75
+      0.6
     );
     tl.from(
       ".hero-copy > *",
       { y: 24, autoAlpha: 0, duration: 0.8, stagger: 0.08, ease: "power2.out" },
-      0.9
+      0.75
     );
     tl.from(
       ".bottle",
       { y: 48, autoAlpha: 0, duration: 0.85, stagger: 0.06, ease: "power3.out" },
-      1.05
+      0.9
     );
   }
 
@@ -482,20 +484,17 @@ export function CinematicIntro() {
     setPill("enter");
     gsap.to(grainRef.current, { autoAlpha: 0.18, duration: 0.8 });
 
+    // 1–3: scratches → compound paste → polishing
     for (let i = 0; i < BEATS.length; i++) {
       if (finished.current || runId.current !== id) return;
       await playBeat(BEATS[i], id, i === 0);
     }
 
+    // 4: logo
     if (finished.current || runId.current !== id) return;
     await playTypeBeat(id);
 
-    if (finished.current || runId.current !== id) return;
-
-    // Soft handoff: fade intro away, then reveal site (ENTER also does this anytime)
-    await hideCaption();
-    gsap.to(typeRef.current, { autoAlpha: 0, duration: 0.45, ease: "power2.in" });
-    await wait(200, id);
+    // 5: website
     if (finished.current || runId.current !== id) return;
     goToSite();
   }
@@ -638,12 +637,15 @@ export function CinematicIntro() {
 
         <div className="kinetic-wrap" ref={typeRef} aria-hidden>
           <div className="type-streak" />
-          <div className="kinetic">
-            {["A", "S", "A", "P"].map((ch, i) => (
-              <span key={`${ch}-${i}`} className="k-letter">
-                {ch}
-              </span>
-            ))}
+          <div className="kinetic-stack">
+            <div className="kinetic">
+              {["A", "S", "A", "P"].map((ch, i) => (
+                <span key={`${ch}-${i}`} className="k-letter">
+                  {ch}
+                </span>
+              ))}
+            </div>
+            <p className="type-sub">Precision Detailing</p>
           </div>
         </div>
       </div>

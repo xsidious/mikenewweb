@@ -244,6 +244,7 @@ a {
   z-index: 8;
   opacity: 0;
   pointer-events: none;
+  background: #000;
 }
 
 .type-streak {
@@ -265,6 +266,15 @@ a {
   opacity: 0;
 }
 
+.kinetic-stack {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.85rem;
+}
+
 .kinetic {
   display: flex;
   gap: clamp(0.15rem, 1.4vw, 0.9rem);
@@ -273,8 +283,16 @@ a {
   letter-spacing: 0.02em;
   line-height: 0.85;
   color: #fff;
-  z-index: 2;
   text-shadow: 0 0 40px rgba(0, 0, 0, 0.45);
+}
+
+.type-sub {
+  margin: 0;
+  font-size: clamp(0.7rem, 1.4vw, 0.95rem);
+  letter-spacing: 0.42em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.72);
+  opacity: 0;
 }
 
 .k-letter {
