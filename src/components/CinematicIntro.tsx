@@ -6,18 +6,6 @@ import gsap from "gsap";
 type PillMode = "enter" | "skip";
 type SceneName = "scratches" | "compound" | "polish";
 
-type Beat = {
-  scene: SceneName;
-  src: string;
-  /** How long the beat holds on screen */
-  duration: number;
-  /** Start offset into the source clip */
-  startAt: number;
-  caption: string;
-  /** Camera move for this beat */
-  camera: { from: Cam; to: Cam };
-};
-
 type Cam = {
   scale: number;
   x: number;
@@ -26,47 +14,54 @@ type Cam = {
   contrast: number;
 };
 
+type Beat = {
+  scene: SceneName;
+  src: string;
+  startAt: number;
+  caption: string;
+  /** Wide starting frame */
+  wide: Cam;
+  /** Tight zoom on the subject (scratches / paste / polish) */
+  close: Cam;
+};
+
 const BEATS: Beat[] = [
   {
     scene: "scratches",
     src: "/videos/scratches.mp4?v=5",
-    duration: 5000,
-    startAt: 0.15,
+    startAt: 0.2,
     caption: "1 — Scratches",
-    camera: {
-      from: { scale: 1.2, x: 0.03, y: -0.02, bright: 0.78, contrast: 1.25 },
-      to: { scale: 1.06, x: -0.02, y: 0.01, bright: 0.95, contrast: 1.12 },
-    },
+    wide: { scale: 1.08, x: 0.01, y: 0, bright: 0.88, contrast: 1.15 },
+    close: { scale: 1.42, x: 0.04, y: -0.03, bright: 0.95, contrast: 1.28 },
   },
   {
     scene: "compound",
     src: "/videos/compound.mp4?v=3",
-    duration: 4800,
-    startAt: 0.15,
+    startAt: 0.2,
     caption: "2 — Apply Compound",
-    camera: {
-      from: { scale: 1.18, x: -0.03, y: 0.02, bright: 0.78, contrast: 1.12 },
-      to: { scale: 1.05, x: 0.02, y: -0.01, bright: 0.95, contrast: 1.05 },
-    },
+    wide: { scale: 1.06, x: -0.01, y: 0.01, bright: 0.92, contrast: 1.08 },
+    close: { scale: 1.38, x: -0.03, y: 0.02, bright: 0.98, contrast: 1.14 },
   },
   {
     scene: "polish",
     src: "/videos/polish.mp4?v=3",
-    duration: 5200,
-    startAt: 0.2,
+    startAt: 0.25,
     caption: "3 — Polish",
-    camera: {
-      from: { scale: 1.2, x: 0.03, y: 0.02, bright: 0.75, contrast: 1.15 },
-      to: { scale: 1.04, x: -0.01, y: -0.02, bright: 1, contrast: 1.05 },
-    },
+    wide: { scale: 1.05, x: 0, y: 0, bright: 0.95, contrast: 1.06 },
+    close: { scale: 1.36, x: 0.02, y: 0.02, bright: 1, contrast: 1.12 },
   },
 ];
 
+const ZOOM_IN_MS = 2400;
+const HOLD_MS = 700;
+const ZOOM_OUT_MS = 1800;
+const CROSSFADE_AT = 0.42; // swap mid zoom-out
+
 const IDLE_CAM: Cam = {
-  scale: 1.12,
+  scale: 1.1,
   x: 0,
   y: 0,
-  bright: 0.85,
+  bright: 0.88,
   contrast: 1.1,
 };
 
@@ -245,7 +240,13 @@ export function CinematicIntro() {
     preloadDone.current = true;
   }
 
-  function animateCamera(from: Cam, to: Cam, duration: number) {
+  function animateCamera(
+    from: Cam,
+    to: Cam,
+    durationMs: number,
+    ease = "power2.inOut"
+  ) {
+    gsap.killTweensOf(cam.current);
     Object.assign(cam.current, from);
     return gsap.to(cam.current, {
       scale: to.scale,
@@ -253,9 +254,23 @@ export function CinematicIntro() {
       y: to.y,
       bright: to.bright,
       contrast: to.contrast,
-      duration: duration / 1000,
-      ease: "none",
+      duration: durationMs / 1000,
+      ease,
     });
+  }
+
+  async function swapToBeat(beat: Beat) {
+    const nextSlot = activeSlot.current === "a" ? "b" : "a";
+    const target =
+      nextSlot === "a" ? videoARef.current : videoBRef.current;
+    if (!target) return;
+
+    await loadInto(target, beat.src, beat.startAt);
+    const prev = activeVideo();
+    if (prev && prev !== target) prev.pause();
+    activeSlot.current = nextSlot;
+    await target.play().catch(() => undefined);
+    paintLoop();
   }
 
   async function flashTransition() {
@@ -265,89 +280,112 @@ export function CinematicIntro() {
 
     const tl = gsap.timeline();
     tl.set(flash, { autoAlpha: 0 });
-    tl.to(flash, { autoAlpha: 0.55, duration: 0.12, ease: "power1.out" }, 0);
+    tl.to(flash, { autoAlpha: 0.4, duration: 0.1, ease: "power1.out" }, 0);
     if (streak) {
       tl.fromTo(
         streak,
         { autoAlpha: 0, x: "-30%", scaleX: 0.4 },
-        { autoAlpha: 0.9, x: "20%", scaleX: 1.2, duration: 0.35, ease: "power3.out" },
+        {
+          autoAlpha: 0.85,
+          x: "18%",
+          scaleX: 1.15,
+          duration: 0.32,
+          ease: "power3.out",
+        },
         0
       );
       tl.to(
         streak,
-        { autoAlpha: 0, x: "70%", duration: 0.35, ease: "power2.in" },
-        0.25
+        { autoAlpha: 0, x: "70%", duration: 0.32, ease: "power2.in" },
+        0.22
       );
     }
-    tl.to(flash, { autoAlpha: 0, duration: 0.45, ease: "power2.inOut" }, 0.15);
+    tl.to(flash, { autoAlpha: 0, duration: 0.4, ease: "power2.inOut" }, 0.12);
     await new Promise<void>((resolve) => {
       tl.eventCallback("onComplete", () => resolve());
     });
   }
 
-  async function playBeat(beat: Beat, id: number, isFirst: boolean) {
+  /**
+   * Zoom IN on detail → hold → zoom OUT.
+   * Mid zoom-out, crossfade into the next clip so the pull-back continues on it.
+   */
+  async function playZoomBeat(
+    beat: Beat,
+    next: Beat | null,
+    id: number,
+    opts: { fromWide: boolean }
+  ) {
     if (finished.current || runId.current !== id) return;
 
-    if (isFirst) {
-      // Continue from boot footage — soft push-in, no hard cut
-      const current = activeVideo();
-      if (current) {
-        try {
-          current.currentTime = beat.startAt;
-        } catch {
-          /* ignore */
-        }
-        await current.play().catch(() => undefined);
-      }
-      paintLoop();
-      gsap.fromTo(
-        fade.current,
-        { value: 0.7 },
-        { value: 1, duration: 0.6, ease: "power2.out" }
+    // Prefetch next into idle slot
+    if (next) {
+      const idle = inactiveVideo();
+      if (idle) void loadInto(idle, next.src, next.startAt);
+    }
+
+    if (opts.fromWide) {
+      Object.assign(cam.current, beat.wide);
+      fade.current.value = 1;
+      showCaption(beat.caption, 0.05);
+
+      // ZOOM IN
+      animateCamera(beat.wide, beat.close, ZOOM_IN_MS, "power2.inOut");
+      await wait(ZOOM_IN_MS, id);
+      if (finished.current || runId.current !== id) return;
+
+      await wait(HOLD_MS, id);
+      if (finished.current || runId.current !== id) return;
+    } else {
+      // Already mid zoom-out from previous transition — settle to wide, then zoom in
+      showCaption(beat.caption, 0.15);
+      animateCamera(
+        { ...cam.current },
+        beat.wide,
+        ZOOM_OUT_MS * (1 - CROSSFADE_AT),
+        "power2.out"
       );
-      showCaption(beat.caption, 0.1);
-      animateCamera(beat.camera.from, beat.camera.to, beat.duration);
+      await wait(ZOOM_OUT_MS * (1 - CROSSFADE_AT), id);
+      if (finished.current || runId.current !== id) return;
 
-      const upcoming = BEATS[1];
-      const idle = inactiveVideo();
-      if (upcoming && idle) void loadInto(idle, upcoming.src, upcoming.startAt);
+      animateCamera(beat.wide, beat.close, ZOOM_IN_MS, "power2.inOut");
+      await wait(ZOOM_IN_MS, id);
+      if (finished.current || runId.current !== id) return;
 
-      await wait(beat.duration, id);
-      return;
+      await wait(HOLD_MS, id);
+      if (finished.current || runId.current !== id) return;
     }
 
-    const nextSlot = activeSlot.current === "a" ? "b" : "a";
-    const target =
-      nextSlot === "a" ? videoARef.current : videoBRef.current;
-    if (!target) return;
-
-    await loadInto(target, beat.src, beat.startAt);
-    if (finished.current || runId.current !== id) return;
-
+    // ZOOM OUT — if there's a next clip, swap mid-way so we "zoom out of" it
     await hideCaption();
-    fade.current.value = 0;
-    gsap.to(fade.current, { value: 1, duration: 0.65, ease: "power2.out" });
-    void flashTransition();
+    const outTarget = next
+      ? {
+          scale: Math.max(beat.close.scale * 0.78, next.close.scale * 0.92),
+          x: (beat.close.x + next.wide.x) / 2,
+          y: (beat.close.y + next.wide.y) / 2,
+          bright: 0.75,
+          contrast: 1.2,
+        }
+      : beat.wide;
 
-    const prev = activeVideo();
-    if (prev && prev !== target) prev.pause();
+    animateCamera({ ...cam.current }, outTarget, ZOOM_OUT_MS, "power2.inOut");
 
-    activeSlot.current = nextSlot;
-    Object.assign(cam.current, beat.camera.from);
-    await target.play().catch(() => undefined);
-    paintLoop();
+    if (next) {
+      const swapAt = ZOOM_OUT_MS * CROSSFADE_AT;
+      await wait(swapAt, id);
+      if (finished.current || runId.current !== id) return;
 
-    showCaption(beat.caption, 0.4);
-    animateCamera(beat.camera.from, beat.camera.to, beat.duration);
+      // Keep camera motion continuous; reveal next video under the zoom-out
+      fade.current.value = 0.35;
+      gsap.to(fade.current, { value: 1, duration: 0.55, ease: "power2.out" });
+      void flashTransition();
+      await swapToBeat(next);
 
-    const idx = BEATS.findIndex((b) => b.scene === beat.scene);
-    const upcoming = BEATS[idx + 1];
-    if (upcoming) {
-      const idle = inactiveVideo();
-      if (idle) void loadInto(idle, upcoming.src, upcoming.startAt);
+      await wait(ZOOM_OUT_MS - swapAt, id);
+      if (finished.current || runId.current !== id) return;
+    } else {
+      await wait(ZOOM_OUT_MS, id);
     }
-
-    await wait(beat.duration, id);
   }
 
   function wait(ms: number, id: number) {
@@ -484,11 +522,34 @@ export function CinematicIntro() {
     setPill("enter");
     gsap.to(grainRef.current, { autoAlpha: 0.18, duration: 0.8 });
 
-    // 1–3: scratches → compound paste → polishing
-    for (let i = 0; i < BEATS.length; i++) {
-      if (finished.current || runId.current !== id) return;
-      await playBeat(BEATS[i], id, i === 0);
+    // Resume / ensure scratches is playing from boot
+    const current = activeVideo();
+    if (current) {
+      try {
+        current.currentTime = BEATS[0].startAt;
+      } catch {
+        /* ignore */
+      }
+      await current.play().catch(() => undefined);
     }
+    paintLoop();
+    gsap.fromTo(
+      fade.current,
+      { value: 0.75 },
+      { value: 1, duration: 0.45, ease: "power2.out" }
+    );
+
+    // 1: zoom in on scratches → zoom out into compound
+    if (finished.current || runId.current !== id) return;
+    await playZoomBeat(BEATS[0], BEATS[1], id, { fromWide: true });
+
+    // 2: settle/zoom in on paste → zoom out into polish
+    if (finished.current || runId.current !== id) return;
+    await playZoomBeat(BEATS[1], BEATS[2], id, { fromWide: false });
+
+    // 3: settle/zoom in on polishing → zoom out toward logo
+    if (finished.current || runId.current !== id) return;
+    await playZoomBeat(BEATS[2], null, id, { fromWide: false });
 
     // 4: logo
     if (finished.current || runId.current !== id) return;
@@ -518,13 +579,7 @@ export function CinematicIntro() {
     if (!a) return;
 
     activeSlot.current = "a";
-    Object.assign(cam.current, {
-      scale: 1.22,
-      x: 0.02,
-      y: 0,
-      bright: 0.55,
-      contrast: 1.18,
-    });
+    Object.assign(cam.current, { ...BEATS[0].wide, bright: 0.55 });
     fade.current.value = 1;
     await a.play().catch(() => undefined);
     paintLoop();
@@ -534,10 +589,9 @@ export function CinematicIntro() {
     const boot = gsap.timeline({
       defaults: { ease: "power2.inOut" },
       onComplete: () => {
-        // Auto-play the sequence, but never auto-enter the site
         holdTimer.current = window.setTimeout(() => {
           if (!started.current && !finished.current) startCinematic();
-        }, 1800);
+        }, 1400);
       },
     });
 
@@ -546,11 +600,12 @@ export function CinematicIntro() {
     boot.to(
       cam.current,
       {
-        scale: 1.1,
-        bright: 0.92,
-        contrast: 1.08,
-        x: 0,
-        duration: 2.6,
+        scale: BEATS[0].wide.scale,
+        bright: BEATS[0].wide.bright,
+        contrast: BEATS[0].wide.contrast,
+        x: BEATS[0].wide.x,
+        y: BEATS[0].wide.y,
+        duration: 2.2,
         ease: "power1.out",
       },
       0.1
