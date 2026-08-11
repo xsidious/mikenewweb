@@ -1,10 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Allow Vercel deploy even if ESLint/TS report issues
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
+  // Skip type-check failures during production builds (Vercel)
   typescript: {
     ignoreBuildErrors: true,
   },
