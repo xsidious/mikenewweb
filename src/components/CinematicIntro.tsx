@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 
 type PillMode = "enter" | "skip";
-type SceneName = "scratches" | "compound" | "polish";
+type SceneName = "car" | "boat" | "plane";
 
 type Cam = {
   scale: number;
@@ -21,41 +21,41 @@ type Beat = {
   caption: string;
   /** Wide starting frame */
   wide: Cam;
-  /** Tight zoom on the subject (scratches / paste / polish) */
+  /** Tight cinematic push-in */
   close: Cam;
 };
 
 const BEATS: Beat[] = [
   {
-    scene: "scratches",
-    src: "/videos/scratches.mp4?v=5",
-    startAt: 0.2,
-    caption: "1 — Scratches",
-    wide: { scale: 1.08, x: 0.01, y: 0, bright: 0.88, contrast: 1.15 },
-    close: { scale: 1.42, x: 0.04, y: -0.03, bright: 0.95, contrast: 1.28 },
+    scene: "car",
+    src: "/videos/car.mp4?v=2",
+    startAt: 0.15,
+    caption: "LAND",
+    wide: { scale: 1.08, x: 0.03, y: 0.02, bright: 0.78, contrast: 1.22 },
+    close: { scale: 1.58, x: 0.08, y: -0.04, bright: 0.98, contrast: 1.38 },
   },
   {
-    scene: "compound",
-    src: "/videos/compound.mp4?v=3",
-    startAt: 0.2,
-    caption: "2 — Apply Compound",
-    wide: { scale: 1.06, x: -0.01, y: 0.01, bright: 0.92, contrast: 1.08 },
-    close: { scale: 1.38, x: -0.03, y: 0.02, bright: 0.98, contrast: 1.14 },
+    scene: "boat",
+    src: "/videos/boat.mp4?v=2",
+    startAt: 0.35,
+    caption: "SEA",
+    wide: { scale: 1.06, x: -0.03, y: 0.03, bright: 0.72, contrast: 1.28 },
+    close: { scale: 1.52, x: -0.05, y: 0.02, bright: 0.92, contrast: 1.34 },
   },
   {
-    scene: "polish",
-    src: "/videos/polish.mp4?v=3",
-    startAt: 0.25,
-    caption: "3 — Polish",
-    wide: { scale: 1.05, x: 0, y: 0, bright: 0.95, contrast: 1.06 },
-    close: { scale: 1.36, x: 0.02, y: 0.02, bright: 1, contrast: 1.12 },
+    scene: "plane",
+    src: "/videos/plane.mp4?v=2",
+    startAt: 0.12,
+    caption: "AIR",
+    wide: { scale: 1.1, x: 0.02, y: 0, bright: 0.84, contrast: 1.16 },
+    close: { scale: 1.62, x: 0.04, y: -0.02, bright: 1.05, contrast: 1.3 },
   },
 ];
 
-const ZOOM_IN_MS = 2400;
-const HOLD_MS = 700;
-const ZOOM_OUT_MS = 1800;
-const CROSSFADE_AT = 0.42; // swap mid zoom-out
+const ZOOM_IN_MS = 2800;
+const HOLD_MS = 900;
+const ZOOM_OUT_MS = 2000;
+const CROSSFADE_AT = 0.38; // swap mid zoom-out
 
 const IDLE_CAM: Cam = {
   scale: 1.1,
@@ -236,7 +236,7 @@ export function CinematicIntro() {
       loadInto(a, BEATS[0].src, BEATS[0].startAt),
       loadInto(b, BEATS[1].src, BEATS[1].startAt),
     ]);
-    // Warm polish into whichever is idle after swap during cinema
+    // Warm next clip into idle buffer during cinema
     preloadDone.current = true;
   }
 
@@ -522,7 +522,7 @@ export function CinematicIntro() {
     setPill("enter");
     gsap.to(grainRef.current, { autoAlpha: 0.18, duration: 0.8 });
 
-    // Resume / ensure scratches is playing from boot
+    // Resume / ensure first beat is playing from boot
     const current = activeVideo();
     if (current) {
       try {
@@ -700,7 +700,7 @@ export function CinematicIntro() {
                 </span>
               ))}
             </div>
-            <p className="type-sub">Precision Detailing</p>
+            <p className="type-sub">Land · Sea · Air</p>
           </div>
         </div>
       </div>

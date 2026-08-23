@@ -104,18 +104,23 @@ a {
 .scene-caption {
   position: fixed;
   left: 50%;
-  top: 16%;
+  top: 14%;
   transform: translateX(-50%);
   z-index: 55;
-  font-size: clamp(0.72rem, 1.25vw, 0.9rem);
-  letter-spacing: 0.35em;
+  font-family: var(--font-bebas), Impact, sans-serif;
+  font-size: clamp(2.4rem, 9vw, 6.5rem);
+  font-weight: 700;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.82);
+  color: rgba(255, 255, 255, 0.94);
   opacity: 0;
   pointer-events: none;
   text-align: center;
-  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.65);
+  text-shadow:
+    0 0 40px rgba(0, 0, 0, 0.55),
+    0 4px 32px rgba(0, 0, 0, 0.75);
   white-space: nowrap;
+  line-height: 1;
 }
 
 /* —— Scenes —— */
