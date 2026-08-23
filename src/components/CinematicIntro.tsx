@@ -539,15 +539,15 @@ export function CinematicIntro() {
       { value: 1, duration: 0.45, ease: "power2.out" }
     );
 
-    // 1: zoom in on scratches → zoom out into compound
+    // 1: zoom in on car → zoom out into boat
     if (finished.current || runId.current !== id) return;
     await playZoomBeat(BEATS[0], BEATS[1], id, { fromWide: true });
 
-    // 2: settle/zoom in on paste → zoom out into polish
+    // 2: settle/zoom in on yacht → zoom out into plane
     if (finished.current || runId.current !== id) return;
     await playZoomBeat(BEATS[1], BEATS[2], id, { fromWide: false });
 
-    // 3: settle/zoom in on polishing → zoom out toward logo
+    // 3: settle/zoom in on jet → zoom out toward logo
     if (finished.current || runId.current !== id) return;
     await playZoomBeat(BEATS[2], null, id, { fromWide: false });
 
